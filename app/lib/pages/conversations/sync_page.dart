@@ -188,7 +188,9 @@ class WalListItem extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '${secondsToHumanReadable(wal.seconds)} • ${wal.deviceModel ?? "Omi Device"}${wal.storage == WalStorage.sdcard ? " • SD Card" : ""}',
+                                          wal.storage == WalStorage.flashPage
+                                              ? '${wal.deviceModel ?? "Limitless"} • Offline Recording'
+                                              : '${secondsToHumanReadable(wal.seconds)} • ${wal.deviceModel ?? "Omi Device"}${wal.storage == WalStorage.sdcard ? " • SD Card" : ""}',
                                           style: TextStyle(
                                             color: Colors.grey.shade400,
                                             fontSize: 14,
@@ -206,8 +208,11 @@ class WalListItem extends StatelessWidget {
                                     _buildStatusChip('Not Processed', Colors.grey)
                                 ],
                               ),
-                              // Progress bar for syncing - only show if actually syncing
-                              if (wal.isSyncing && wal.status != WalStatus.synced && wal.syncStartedAt != null) ...[
+                              // Progress bar for syncing - only show if actually syncing and not flash page
+                              if (wal.isSyncing &&
+                                  wal.status != WalStatus.synced &&
+                                  wal.syncStartedAt != null &&
+                                  wal.storage != WalStorage.flashPage) ...[
                                 const SizedBox(height: 8),
                                 SizedBox(
                                   height: 2,
@@ -456,27 +461,37 @@ class _SyncPageState extends State<SyncPage> with TickerProviderStateMixin {
                 ],
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  _buildFilterChip(
-                    label: 'All Recordings',
-                    isSelected: syncProvider.storageFilter == null,
-                    onTap: () => syncProvider.clearStorageFilter(),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    label: 'Phone Storage',
-                    isSelected:
-                        syncProvider.storageFilter == WalStorage.disk || syncProvider.storageFilter == WalStorage.mem,
-                    onTap: () => syncProvider.setStorageFilter(WalStorage.disk),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    label: 'SD Card',
-                    isSelected: syncProvider.storageFilter == WalStorage.sdcard,
-                    onTap: () => syncProvider.setStorageFilter(WalStorage.sdcard),
-                  ),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: [
+                    _buildFilterChip(
+                      label: 'All Recordings',
+                      isSelected: syncProvider.storageFilter == null,
+                      onTap: () => syncProvider.clearStorageFilter(),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'Phone Storage',
+                      isSelected:
+                          syncProvider.storageFilter == WalStorage.disk || syncProvider.storageFilter == WalStorage.mem,
+                      onTap: () => syncProvider.setStorageFilter(WalStorage.disk),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'SD Card',
+                      isSelected: syncProvider.storageFilter == WalStorage.sdcard,
+                      onTap: () => syncProvider.setStorageFilter(WalStorage.sdcard),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'Limitless',
+                      isSelected: syncProvider.storageFilter == WalStorage.flashPage,
+                      onTap: () => syncProvider.setStorageFilter(WalStorage.flashPage),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -923,7 +938,8 @@ class _SyncPageState extends State<SyncPage> with TickerProviderStateMixin {
                   _buildStatItem('Total Files', '${stats.totalFiles}'),
                   _buildStatItem('Total Size', stats.totalSizeFormatted),
                   _buildStatItem('On Phone', '${stats.phoneFiles}'),
-                  _buildStatItem('On SD Card', '${stats.sdcardFiles}'),
+                  if (stats.sdcardFiles > 0) _buildStatItem('On SD Card', '${stats.sdcardFiles}'),
+                  if (stats.limitlessFiles > 0) _buildStatItem('Limitless', '${stats.limitlessFiles}'),
                 ],
               ),
               const SizedBox(height: 24),
