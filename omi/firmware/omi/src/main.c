@@ -310,6 +310,10 @@ int main(void)
         return ret;
     }
 
+    watchdog_feed();
+    k_sleep(K_SECONDS(10));
+    wifi_init();
+
     LOG_INF("Device initialized successfully\n");
 
     while (1) {
