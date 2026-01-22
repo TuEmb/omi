@@ -46,10 +46,12 @@ int main(void)
     int ret;
     bool button_pressed = false;
     if (init_module() < 0) {
-        shell_execute_cmd(NULL, "sys off");
         return -1;
     }
-    shell_execute_cmd(NULL, "ble on");
+    // Start shell over UART
+    const struct shell *shell_ptr = shell_backend_uart_get_ptr();
+    shell_start(shell_ptr);
+
     printk("Starting omi EVT test...\n");
 
     ret = pm_device_runtime_get(buttons);
@@ -63,6 +65,9 @@ int main(void)
 
     while (1) {
 
+#ifdef CONFIG_PCBA_TEST
+        k_sleep(K_SECONDS(1));
+#else
         ret = k_msgq_get(&input_button, &evt, K_SECONDS(60));
         if (ret == -EAGAIN) {
             // if (!button_pressed && !is_charging)
@@ -89,6 +94,7 @@ int main(void)
             }
             break;
         }
+#endif
     }
 
     ret = pm_device_runtime_put(buttons);

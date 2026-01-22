@@ -1,1 +1,5 @@
 source "Kconfig.zephyr"
+
+config PCBA_TEST
+	bool "Enable PCBA test mode"
+	default n
