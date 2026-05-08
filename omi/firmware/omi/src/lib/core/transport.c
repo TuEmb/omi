@@ -946,31 +946,15 @@ static void log_local_ble_addresses(void)
     }
 }
 
-static int ensure_local_ble_identity(void)
+static int load_local_ble_identities(void)
 {
 #if defined(CONFIG_BT_SETTINGS)
-    int err = settings_load();
+    int err = settings_load_subtree("bt");
     if (err && err != -ENOENT) {
         LOG_ERR("Failed to load BT settings (err %d)", err);
         return err;
     }
 #endif
-
-    bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
-    size_t count = CONFIG_BT_ID_MAX;
-
-    bt_id_get(addrs, &count);
-    if (count > 0U) {
-        return 0;
-    }
-
-    int id = bt_id_create(NULL, NULL);
-    if (id < 0) {
-        LOG_ERR("Failed to create local BLE identity (err %d)", id);
-        return id;
-    }
-
-    LOG_INF("Created local BLE identity %d", id);
     return 0;
 }
 
@@ -1328,9 +1312,9 @@ int transport_start()
 
     LOG_INF("Transport bluetooth initialized");
 
-    err = ensure_local_ble_identity();
+    err = load_local_ble_identities();
     if (err) {
-        LOG_WRN("Continuing without confirmed BLE identity (err %d)", err);
+        LOG_WRN("Continuing without loaded BT identities (err %d)", err);
     }
 
     // Production-line helper: emit local BLE addresses on UART for fixture parsing.
